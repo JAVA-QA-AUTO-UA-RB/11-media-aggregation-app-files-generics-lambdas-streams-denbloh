@@ -1,8 +1,6 @@
 package com.example.media.classes;
 
-/**
- * Music track class extending Media.
- */
+
 public class Track extends Media {
     private String artist;
     private String genre;
@@ -29,7 +27,6 @@ public class Track extends Media {
 
     @Override
     public String toString() {
-        // TODO: Return string with title, artist, genre, rating
-        return super.toString();
+        return String.format("%s - %s [%s] (rating %d, %s)", title, artist, genre, rating, getDurationInMinutes());
     }
 }
