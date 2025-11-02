@@ -5,86 +5,118 @@ import com.example.media.classes.Track;
 import com.example.media.classes.Video;
 
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.Comparator;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Клас-утиліта для запису статистики у вихідні файли.
- *
- * Студенти мають реалізувати методи нижче з використанням:
- * - Stream API
- * - лямбда-виразів
- * - method references
- *
- * Формат вихідних файлів має бути простим і "людиночитабельним"
- * (див. приклади у README.md).
+ * Utility class for writing media statistics to output files.
  */
 public class MediaStatisticsWriter {
 
-    /**
-     * Запис статистики по музичних треках у файл.
-     *
-     * Очікуваний формат файлу `tracks_output.txt`:
-     * --------------------------------------------
-     * Tracks count: <загальна кількість треків>
-     * Average duration: <середня тривалість у секундах> seconds
-     *
-     * Top 3 tracks by rating:
-     * 1. <назва треку> (rating <рейтинг>)
-     * 2. <назва треку> (rating <рейтинг>)
-     * 3. <назва треку> (rating <рейтинг>)
-     *
-     * Pop tracks:
-     * - <назва треку>
-     * - <назва треку>
-     * --------------------------------------------
-     *
-     * Пояснення:
-     * - Tracks count → кількість елементів у плейлисті
-     * - Average duration → середня тривалість у секундах
-     * - Top 3 → відсортовані за рейтингом спаданням,
-     *   при однаковому рейтингу брати найдовші
-     * - Pop tracks → усі треки, у яких жанр == "Pop"
-     */
     public static void writeTrackStats(Playlist<Track> playlist, String filename) throws IOException {
-        // TODO: Реалізуйте цей метод
-        // Підказки:
-        // - Використайте playlist.getItems().size() для підрахунку кількості
-        // - Використайте stream().mapToInt(Track::getDuration).average() для середньої тривалості
-        // - Використайте stream().sorted(...).limit(3) для топ-3 за рейтингом
-        // - Використайте stream().filter(t -> t.getGenre().equalsIgnoreCase("Pop")) для відбору Pop-треків
-        // - Запишіть результати у файл через PrintWriter або Files.write()
+        List<Track> items = playlist.getItems();
+//        int avgDuration = (int) Math.round(
+//                items.stream().mapToInt(Track::getDuration).average().orElse(0.0)
+//        );
+        int count = items.size();
+        int avgDurationSec = (int) Math.round(
+                items.stream().mapToInt(Track::getDuration).average().orElse(0.0)
+        );
+        int avgMin = avgDurationSec / 60;
+        int avgSec = avgDurationSec % 60;
+
+
+        List<Track> top3 = items.stream()
+                .sorted(Comparator.comparingInt(Track::getRating).reversed()
+                        .thenComparing(Comparator.comparingInt(Track::getDuration).reversed()))
+                .limit(3)
+                .collect(Collectors.toList());
+
+
+        List<Track> popTracks = items.stream()
+                .filter(t -> t.getGenre() != null && t.getGenre().equalsIgnoreCase("Pop"))
+                .collect(Collectors.toList());
+
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Tracks count: ").append(count).append(System.lineSeparator());
+        sb.append(System.lineSeparator());
+//        sb.append("Average duration: ").append(avgDuration).append(" seconds").append(System.lineSeparator());
+        sb.append("Average duration: ").append(avgMin)
+                .append(" min ").append(avgSec).append(" sec")
+                .append(System.lineSeparator());
+        sb.append(System.lineSeparator());
+        sb.append("Top 3 tracks by rating:").append(System.lineSeparator());
+        for (int i = 0; i < top3.size(); i++) {
+            Track t = top3.get(i);
+            sb.append(i + 1).append(". ").append(t.getTitle())
+                    .append(" (rating ").append(t.getRating()).append(")").append(System.lineSeparator());
+        }
+        sb.append(System.lineSeparator());
+        sb.append("Pop tracks:").append(System.lineSeparator());
+        for (Track t : popTracks) {
+            sb.append("- ").append(t.getTitle()).append(System.lineSeparator());
+        }
+
+
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get(filename)))) {
+            pw.print(sb.toString());
+        }
     }
 
-    /**
-     * Запис статистики по відео у файл.
-     *
-     * Очікуваний формат файлу `videos_output.txt`:
-     * --------------------------------------------
-     * Videos count: <загальна кількість відео>
-     * Average duration: <середня тривалість у секундах> seconds
-     *
-     * Top 3 videos by views:
-     * 1. <назва відео> (<кількість переглядів> views)
-     * 2. <назва відео> (<кількість переглядів> views)
-     * 3. <назва відео> (<кількість переглядів> views)
-     *
-     * Education videos:
-     * - <назва відео>
-     * - <назва відео>
-     * --------------------------------------------
-     *
-     * Пояснення:
-     * - Videos count → кількість елементів у плейлисті
-     * - Average duration → середня тривалість у секундах
-     * - Top 3 → відсортовані за views спаданням
-     * - Education videos → усі відео, у яких category == "Education"
-     */
+
     public static void writeVideoStats(Playlist<Video> playlist, String filename) throws IOException {
-        // TODO: Реалізуйте цей метод
-        // Підказки:
-        // - Використайте playlist.getItems().size() для підрахунку кількості
-        // - Використайте stream().mapToInt(Video::getDuration).average() для середньої тривалості
-        // - Використайте stream().sorted(...).limit(3) для топ-3 за views
-        // - Використайте stream().filter(v -> v.getCategory().equalsIgnoreCase("Education")) для Education-відео
-        // - Запишіть результати у файл через PrintWriter або Files.write()
+        List<Video> items = playlist.getItems();
+
+        int count = items.size();
+//        int avgDuration = (int) Math.round(
+//                items.stream().mapToInt(Video::getDuration).average().orElse(0.0)
+//        );
+        int avgDurationSec = (int) Math.round(
+                items.stream().mapToInt(Video::getDuration).average().orElse(0.0)
+        );
+        int avgMin = avgDurationSec / 60;
+        int avgSec = avgDurationSec % 60;
+
+
+        List<Video> top3 = items.stream()
+                .sorted(Comparator.comparingInt(Video::getViews).reversed())
+                .limit(3)
+                .collect(Collectors.toList());
+
+
+        List<Video> eduVideos = items.stream()
+                .filter(v -> v.getCategory() != null && v.getCategory().equalsIgnoreCase("Education"))
+                .collect(Collectors.toList());
+
+
+        StringBuilder sb = new StringBuilder();
+        sb.append("Videos count: ").append(count).append(System.lineSeparator());
+//        sb.append("Average duration: ").append(avgDuration).append(" seconds").append(System.lineSeparator());
+        sb.append(System.lineSeparator());
+        sb.append("Average duration: ").append(avgMin)
+                .append(" min ").append(avgSec).append(" sec")
+                .append(System.lineSeparator());
+        sb.append(System.lineSeparator());
+        sb.append("Top 3 videos by views:").append(System.lineSeparator());
+        for (int i = 0; i < top3.size(); i++) {
+            Video v = top3.get(i);
+            sb.append(i + 1).append(". ").append(v.getTitle())
+                    .append(" (").append(v.getViews()).append(" views)").append(System.lineSeparator());
+        }
+        sb.append(System.lineSeparator());
+        sb.append("Education videos:").append(System.lineSeparator());
+        for (Video v : eduVideos) {
+            sb.append("- ").append(v.getTitle()).append(System.lineSeparator());
+        }
+
+
+        try (PrintWriter pw = new PrintWriter(Files.newBufferedWriter(Paths.get(filename)))) {
+            pw.print(sb.toString());
+        }
     }
 }

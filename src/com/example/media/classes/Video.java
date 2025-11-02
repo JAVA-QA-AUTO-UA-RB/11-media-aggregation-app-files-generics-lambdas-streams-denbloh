@@ -1,8 +1,6 @@
 package com.example.media.classes;
 
-/**
- * Video class extending Media.
- */
+
 public class Video extends Media {
     private String channel;
     private String category;
@@ -29,7 +27,6 @@ public class Video extends Media {
 
     @Override
     public String toString() {
-        // TODO: Return string with title, channel, category, views
-        return super.toString();
+        return String.format("%s - %s [%s] (%d views, %s)", title, channel, category, views, getDurationInMinutes());
     }
 }
